@@ -15,9 +15,9 @@ namespace Stock.Api.Consumers
             var stockCollection = mongoDbService.GetCollection<Stock.Api.Models.Stock>();
             //Stock varsa true yoksa false döner ve stockResult listesine eklenir.
             foreach (var orderItem in context.Message.OrderItems)
-                stockResults.Add(await (await stockCollection.FindAsync(s => s.ProductId == orderItem.ProductId && s.Count >= orderItem.Count)).AnyAsync());
+                stockResults.Add(await (await stockCollection.FindAsync(s => s.ProductId == orderItem.ProductId && s.Count >= (long) orderItem.Count)).AnyAsync());
 
-            sendEndpointProvider.GetSendEndpoint(new Uri($"queue:{RabbitMqSettings.StateMachineQueue}"));
+            var sendEndpoint = await sendEndpointProvider.GetSendEndpoint(new Uri($"queue:{RabbitMqSettings.StateMachineQueue}"));
 
             if (stockResults.TrueForAll(s => s.Equals(true)))
             {
@@ -33,7 +33,7 @@ namespace Stock.Api.Consumers
                     OrderItems = context.Message.OrderItems
                 };
 
-                await sendEndpointProvider.Send(stockReservedEvent);
+                await sendEndpoint.Send(stockReservedEvent);
             }
             else
             {
@@ -42,7 +42,7 @@ namespace Stock.Api.Consumers
                     Message = "Stock not reserved"
                 };
 
-                await sendEndpointProvider.Send(stockNotReservedEvent);
+                await sendEndpoint.Send(stockNotReservedEvent);
             }
         }
     }

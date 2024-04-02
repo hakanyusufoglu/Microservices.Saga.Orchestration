@@ -10,13 +10,13 @@ namespace Payment.Api.Consumers
         {
             var sendEndPoint = await sendEndpointProvider.GetSendEndpoint(new Uri($"queue:{RabbitMqSettings.StateMachineQueue}"));
             // işlem başarılıymış gibi davranıyoruz ve PaymentCompletedEvent oluşturuyoruz. 
-            if (true)
+            if (false)
             {
                 PaymentCompletedEvent paymentCompletedEvent = new(context.Message.CorrelationId)
                 {
                 };
 
-                await sendEndpointProvider.Send(paymentCompletedEvent);
+                await sendEndPoint.Send(paymentCompletedEvent);
             }
             else
             {
@@ -26,7 +26,7 @@ namespace Payment.Api.Consumers
                     OrderItems = context.Message.OrderItems
                 };
 
-                await sendEndpointProvider.Send(paymentFailedEvent);
+                await sendEndPoint.Send(paymentFailedEvent);
 
             }
         }

@@ -1,5 +1,6 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Order.Api.Consumers;
 using Order.Api.Contexts;
 using Order.Api.ViewModels;
 using Shared.Messages;
@@ -13,10 +14,18 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddMassTransit(configurator =>
 {
+    configurator.AddConsumer<OrderCompletedEventConsumer>();
+    configurator.AddConsumer<OrderFailedEventConsumer>();
+
     configurator.UsingRabbitMq((context, _configure) =>
     {
         _configure.Host(builder.Configuration["RabbitMq"]);
+
+        _configure.ReceiveEndpoint(RabbitMqSettings.Order_OrderCompletedEventQueue, e => e.ConfigureConsumer<OrderCompletedEventConsumer>(context));
+        _configure.ReceiveEndpoint(RabbitMqSettings.Order_OrderFailedEventQueue, e => e.ConfigureConsumer<OrderFailedEventConsumer>(context));
     });
+
+
 });
 
 builder.Services.AddDbContext<OrderDbContexts>(options =>
